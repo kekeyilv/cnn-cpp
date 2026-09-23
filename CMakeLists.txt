@@ -6,9 +6,14 @@ add_library(cnn_layers src/layer.cpp)
 target_compile_features(cnn_layers PUBLIC cxx_std_17)
 target_include_directories(cnn_layers PUBLIC include)
 
+add_library(cnn_model src/model.cpp)
+target_compile_features(cnn_model PUBLIC cxx_std_17)
+target_include_directories(cnn_model PUBLIC include)
+target_link_libraries(cnn_model PUBLIC cnn_layers)
+
 add_executable(fashion_mnist src/main.cpp)
 target_compile_features(fashion_mnist PRIVATE cxx_std_17)
-target_link_libraries(fashion_mnist PRIVATE cnn_layers)
+target_link_libraries(fashion_mnist PRIVATE cnn_model)
 
 enable_testing()
 
