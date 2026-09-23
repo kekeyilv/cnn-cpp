@@ -20,4 +20,8 @@ enable_testing()
 add_executable(test_layer test/test_layer.cpp)
 target_link_libraries(test_layer PRIVATE cnn_layers)
 
+add_executable(test_model test/test_model.cpp)
+target_link_libraries(test_model PRIVATE cnn_model)
+
 add_test(NAME layer_tests COMMAND test_layer)
+add_test(NAME model_tests COMMAND test_model)
