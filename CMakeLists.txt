@@ -14,6 +14,7 @@ target_link_libraries(cnn_model PUBLIC cnn_layers)
 add_executable(fashion_mnist src/main.cpp)
 target_compile_features(fashion_mnist PRIVATE cxx_std_17)
 target_link_libraries(fashion_mnist PRIVATE cnn_model)
+target_include_directories(fashion_mnist PUBLIC include)
 
 enable_testing()
 
@@ -25,3 +26,4 @@ target_link_libraries(test_model PRIVATE cnn_model)
 
 add_test(NAME layer_tests COMMAND test_layer)
 add_test(NAME model_tests COMMAND test_model)
+add_test(NAME cli_help COMMAND fashion_mnist --help)
