@@ -1,7 +1,10 @@
+#include <algorithm>
 #include <array>
 #include <exception>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -15,10 +18,11 @@ struct Options {
     std::string model_path;
     std::string input_path;
     bool show_help = false;
+    bool show_logits = false;
 };
 
 void print_usage(std::ostream& output) {
-    output << "Usage: fashion_mnist --model <model.bin> --input <image.txt>\n";
+    output << "Usage: fashion_mnist --model <model.bin> --input <image.txt> [--logits]\n";
 }
 
 Options parse_options(const int argc, char* argv[]) {
@@ -28,6 +32,8 @@ Options parse_options(const int argc, char* argv[]) {
         const std::string argument = argv[index];
         if (argument == "--help") {
             options.show_help = true;
+        } else if (argument == "--logits") {
+            options.show_logits = true;
         } else if (argument == "--model") {
             if (++index >= argc) {
                 throw std::runtime_error("--model requires a path");
@@ -94,7 +100,7 @@ Tensor load_fashion_mnist_input(const std::string& path) {
     return preprocess_pixels(read_pixels(path));
 }
 
-}  // namespace
+}
 
 int main(const int argc, char* argv[]) {
     static const std::array<const char*, 10> class_names = {
@@ -112,7 +118,20 @@ int main(const int argc, char* argv[]) {
         const Tensor input = load_fashion_mnist_input(options.input_path);
         FashionMnistModel model;
         model.load(options.model_path);
-        const int prediction = model.predict(input);
+
+        int prediction = 0;
+        if (options.show_logits) {
+            const std::vector<float> logits = model.forward(input);
+            std::cout << "Logits:" << std::setprecision(9);
+            for (const float logit : logits) {
+                std::cout << ' ' << logit;
+            }
+            std::cout << '\n';
+            prediction = static_cast<int>(std::distance(
+                logits.begin(), std::max_element(logits.begin(), logits.end())));
+        } else {
+            prediction = model.predict(input);
+        }
 
         std::cout << "Prediction: " << prediction << " ("
                   << class_names[prediction] << ")\n";

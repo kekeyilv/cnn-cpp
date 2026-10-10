@@ -7,6 +7,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
+from network import FashionCNN
+
 TENSOR_NAMES = (
     "conv1.weight",
     "conv1.bias",
@@ -17,24 +19,6 @@ TENSOR_NAMES = (
     "fc2.weight",
     "fc2.bias",
 )
-
-
-class FashionCNN(nn.Module):
-    def __init__(self) -> None:
-        super().__init__()
-        self.conv1 = nn.Conv2d(1, 8, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(8, 16, kernel_size=3, padding=1)
-        self.fc1 = nn.Linear(16 * 7 * 7, 64)
-        self.fc2 = nn.Linear(64, 10)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.pool(self.relu(self.conv1(x)))
-        x = self.pool(self.relu(self.conv2(x)))
-        x = torch.flatten(x, 1)
-        x = self.relu(self.fc1(x))
-        return self.fc2(x)
 
 
 def make_data_loaders(data_dir: Path, batch_size: int) -> tuple[DataLoader, DataLoader]:
@@ -132,12 +116,19 @@ def verify_export(path: Path, expected_shapes: list[tuple[int, ...]]) -> None:
             raise RuntimeError("unexpected data at end of model file")
 
 
+def save_checkpoint(model: nn.Module, path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    state = {name: tensor.detach().cpu() for name, tensor in model.state_dict().items()}
+    torch.save(state, path)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train and export a Fashion-MNIST CNN")
     parser.add_argument("--epochs", type=int, default=8)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--output", type=Path, default=Path("model.bin"))
+    parser.add_argument("--checkpoint", type=Path, default=Path("model.pth"))
     parser.add_argument("--data-dir", type=Path, default=Path("data"))
     return parser.parse_args()
 
@@ -170,6 +161,8 @@ def main() -> None:
 
     export_model(model, args.output)
     print(f"Exported 8 tensors to {args.output} ({args.output.stat().st_size} bytes)")
+    save_checkpoint(model, args.checkpoint)
+    print(f"Saved PyTorch checkpoint to {args.checkpoint}")
 
 
 if __name__ == "__main__":
