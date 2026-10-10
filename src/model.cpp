@@ -30,7 +30,7 @@ void require_shape(const Tensor& tensor,
     }
 }
 
-}  // namespace
+}
 
 Tensor read_tensor(std::istream& input) {
     const std::uint32_t ndim = read_value<std::uint32_t>(input);
